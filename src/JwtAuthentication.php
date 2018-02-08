@@ -196,6 +196,14 @@ class JwtAuthentication
         $header = "";
         $message = "";
 
+        /* Try uri param first */
+        $query_params = $request->getQueryParams();
+        if ($this->options["uriparam"] !== null && isset($query_params[$this->options["uriparam"]])) {
+            $this->log(LogLevel::DEBUG, "Using token from uri");
+            $this->log(LogLevel::DEBUG, $query_params[$this->options["uriparam"]]);
+            return $query_params[$this->options["uriparam"]];
+        };
+
         /* Check for each given environment */
         foreach ((array) $this->options["environment"] as $environment) {
             if (isset($server_params[$environment])) {
@@ -230,14 +238,6 @@ class JwtAuthentication
             $this->log(LogLevel::DEBUG, "Using token from cookie");
             $this->log(LogLevel::DEBUG, $cookie_params[$this->options["cookie"]]);
             return $cookie_params[$this->options["cookie"]];
-        };
-
-        /* Bearer and Cookie not found, try uri param. */
-        $query_params = $request->getQueryParams();
-        if ($this->options["uriparam"] !== null && isset($query_params[$this->options["uriparam"]])) {
-            $this->log(LogLevel::DEBUG, "Using token from uri");
-            $this->log(LogLevel::DEBUG, $query_params[$this->options["uriparam"]]);
-            return $query_params[$this->options["uriparam"]];
         };
 
         /* If everything fails log and return false. */
