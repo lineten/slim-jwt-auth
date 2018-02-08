@@ -47,6 +47,7 @@ class JwtAuthentication
         "regexp" => "/Bearer\s+(.*)$/i",
         "cookie" => "token",
         "attribute" => "token",
+        "uriparam" => null,
         "path" => null,
         "passthrough" => null,
         "callback" => null,
@@ -69,16 +70,16 @@ class JwtAuthentication
         /* If nothing was passed in options add default rules. */
         if (!isset($options["rules"])) {
             $this->addRule(new RequestMethodRule([
-                "passthrough" => ["OPTIONS"]
-            ]));
+                                                     "passthrough" => ["OPTIONS"]
+                                                 ]));
         }
 
         /* If path was given in easy mode add rule for it. */
         if (null !== ($this->options["path"])) {
             $this->addRule(new RequestPathRule([
-                "path" => $this->options["path"],
-                "passthrough" => $this->options["passthrough"]
-            ]));
+                                                   "path" => $this->options["path"],
+                                                   "passthrough" => $this->options["passthrough"]
+                                               ]));
         }
     }
 
@@ -231,6 +232,14 @@ class JwtAuthentication
             return $cookie_params[$this->options["cookie"]];
         };
 
+        /* Bearer and Cookie not found, try uri param. */
+        $query_params = $request->getQueryParams();
+        if ($this->options["uriparam"] !== null && isset($query_params[$this->options["uriparam"]])) {
+            $this->log(LogLevel::DEBUG, "Using token from uri");
+            $this->log(LogLevel::DEBUG, $query_params[$this->options["uriparam"]]);
+            return $query_params[$this->options["uriparam"]];
+        };
+
         /* If everything fails log and return false. */
         $this->message = "Token not found";
         $this->log(LogLevel::WARNING, $this->message);
@@ -361,6 +370,28 @@ class JwtAuthentication
     public function setCookie($cookie)
     {
         $this->options["cookie"] = $cookie;
+        return $this;
+    }
+
+    /**
+     * Get the uro param name where to search the token from
+     *
+     * @return string
+     */
+    public function getUriparam()
+    {
+        return $this->options["uriparam"];
+    }
+
+    /**
+     * Set the cookie name where to search the token from
+     *
+     * @param string $cookie
+     * @return self
+     */
+    public function setUriparam($param)
+    {
+        $this->options["uriparam"] = $param;
         return $this;
     }
 
